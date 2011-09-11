@@ -88,6 +88,26 @@ static u8 omap3_beagle_get_rev(void)
 	return omap3_beagle_version;
 }
 
+/*
+ * Board-specific configuration
+ * Defaults to BeagleBoard-xMC
+ */
+static struct {
+       int mmc1_gpio_wp;
+       int usb_pwr_level;
+       int reset_gpio;
+       int usr_button_gpio;
+       char *lcd_driver_name;
+       int lcd_pwren;
+} beagle_config = {
+       .mmc1_gpio_wp = -EINVAL,
+       .usb_pwr_level = GPIOF_OUT_INIT_LOW,
+       .reset_gpio = 129,
+       .usr_button_gpio = 4,
+       .lcd_driver_name = "",
+       .lcd_pwren = 156
+};
+
 static void __init omap3_beagle_init_rev(void)
 {
 	int ret;
@@ -352,6 +372,7 @@ static struct mtd_partition omap3beagle_nand_partitions[] = {
 	},
 };
 
+
 static struct omap_nand_platform_data omap3beagle_nand_data = {
 	.options	= NAND_BUSWIDTH_16,
 	.parts		= omap3beagle_nand_partitions,
@@ -399,15 +420,56 @@ static struct omap_dss_device beagle_tv_device = {
 	.phy.venc.type = OMAP_DSS_VENC_TYPE_SVIDEO,
 };
 
+
+static int beagle_enable_lcd(struct omap_dss_device *dssdev)
+{
+
+       if (gpio_is_valid(beagle_config.lcd_pwren)){
+               printk(KERN_INFO "%s: Enabling LCD\n", __FUNCTION__);
+               gpio_set_value(beagle_config.lcd_pwren, 0);
+       }       
+       else {
+               printk(KERN_INFO "%s: Invalid LCD enable GPIO: %d\n", 
+                       __FUNCTION__, beagle_config.lcd_pwren);
+       }
+
+       return 0;
+}
+
+static void beagle_disable_lcd(struct omap_dss_device *dssdev)
+{
+       if (gpio_is_valid(beagle_config.lcd_pwren)){
+               printk(KERN_INFO "%s: Disabling LCD\n", __FUNCTION__);
+               gpio_set_value(beagle_config.lcd_pwren, 1);
+       }       
+       else {
+               printk(KERN_INFO "%s: Invalid LCD enable GPIO: %d\n", 
+                       __FUNCTION__, beagle_config.lcd_pwren);
+       }
+
+       return;
+}
+
+static struct omap_dss_device beagle_lcd_device = {
+       .name                   = "lcd",
+       .driver_name            = "",
+       .type                   = OMAP_DISPLAY_TYPE_DPI,
+       .phy.dpi.data_lines     = 24,
+       .platform_enable        = beagle_enable_lcd,
+       .platform_disable       = beagle_disable_lcd,
+};
+
+
 static struct omap_dss_device *beagle_dss_devices[] = {
 	&beagle_dvi_device,
 	&beagle_tv_device,
+	&beagle_lcd_device,
 };
 
 static struct omap_dss_board_info beagle_dss_data = {
 	.num_devices = ARRAY_SIZE(beagle_dss_devices),
 	.devices = beagle_dss_devices,
-	.default_device = &beagle_dvi_device,
+	.default_device = &beagle_lcd_device,
 };
 
 static struct regulator_consumer_supply beagle_vdac_supply =
@@ -421,7 +483,7 @@ static struct regulator_consumer_supply beagle_vdvi_supplies[] = {
 static void __init beagle_display_init(void)
 {
 	int r;
-
+#if 0
 	r = gpio_request(beagle_dvi_device.reset_gpio, "DVI reset");
 	if (r < 0) {
 		printk(KERN_ERR "Unable to get DVI reset GPIO\n");
@@ -429,6 +491,18 @@ static void __init beagle_display_init(void)
 	}
 
 	gpio_direction_output(beagle_dvi_device.reset_gpio, 0);
+#else
+
+       r = gpio_request_one(beagle_config.lcd_pwren, GPIOF_OUT_INIT_LOW,
+                            "LCD power");
+       if (r < 0)
+               printk(KERN_ERR "Unable to get LCD power enable GPIO\n");
+
+       r = gpio_request_one(beagle_dvi_device.reset_gpio, GPIOF_OUT_INIT_LOW,
+                            "DVI reset");
+       if (r < 0)
+               printk(KERN_ERR "Unable to get DVI reset GPIO\n");
+#endif
 }
 
 #include "sdram-micron-mt46h32m32lf-6.h"
@@ -949,6 +1023,10 @@ static void __init omap3_beagle_init(void)
 	if (cpu_is_omap3630()) {
 		gpio_buttons[0].gpio = 4;
 	}
+
+	/* TODO: set lcd_driver_name by command line or device tree */
+	beagle_config.lcd_driver_name = "tfc_s9700_panel";
+	beagle_lcd_device.driver_name = beagle_config.lcd_driver_name;
 
 	platform_add_devices(omap3_beagle_devices,
 			ARRAY_SIZE(omap3_beagle_devices));

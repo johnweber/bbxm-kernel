@@ -1,6 +1,12 @@
 menu "OMAP2/3 Display Device Drivers"
         depends on OMAP2_DSS
 
+config PANEL_TFCS9700RTWV35TR01B
+        tristate "TFC S9700RTWV35TR01B"
+        depends on OMAP2_DSS
+        help
+          LCD Panel used on BeagleboardToys 800x480 LCD Expansion Module
+
 config PANEL_GENERIC_DPI
         tristate "Generic DPI Panel"
 	depends on OMAP2_DSS_DPI
