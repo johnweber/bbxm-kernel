@@ -37,6 +37,7 @@
 #include <linux/gpio.h>
 #include <linux/regulator/machine.h>
 #include <linux/i2c/twl.h>
+#include <linux/i2c/tsc2007.h>
 
 #include <mach/hardware.h>
 #include <asm/mach-types.h>
@@ -717,23 +718,65 @@ static struct i2c_board_info __initdata beagle_i2c1_boardinfo[] = {
 	},
 };
 
+
+
 static struct i2c_board_info __initdata beagle_i2c_eeprom[] = {
        {
                I2C_BOARD_INFO("eeprom", 0x50),
        },
 };
 
-#if defined(CONFIG_RTC_DRV_DS1307) || \
-	defined(CONFIG_RTC_DRV_DS1307_MODULE)
+#if defined(CONFIG_INPUT_TOUCHSCREEN) && defined(CONFIG_TOUCHSCREEN_TSC2007)
+/* Touchscreen */
+#define OMAP3BEAGLE_TSC2007_GPIO 157
+static int omap3beagle_tsc2007_get_pendown_state(void){	
+	return !gpio_get_value(OMAP3BEAGLE_TSC2007_GPIO);
+}
+
+static int omap3beagle_tsc2007_init(void){
+	
+	int gpio = OMAP3BEAGLE_TSC2007_GPIO;
+	int ret = 0;
+	printk(KERN_WARNING "TSC2007_init started");
+	ret = gpio_request(gpio, "tsc2007_pen_down");
+	if (ret < 0) {
+		printk(KERN_ERR "Failed to request GPIO %d for "
+		"tsc2007 pen down IRQ\n", gpio);
+		return ret;
+	}
+
+	omap_mux_init_gpio(OMAP3BEAGLE_TSC2007_GPIO, OMAP_PIN_INPUT_PULLUP);
+	gpio_direction_input(gpio);
+
+	irq_set_irq_type(OMAP_GPIO_IRQ(OMAP3BEAGLE_TSC2007_GPIO), IRQ_TYPE_EDGE_FALLING); 
+
+	return ret;
+}
+
+static struct tsc2007_platform_data tsc2007_info = {
+	.model = 2007,
+	.x_plate_ohms = 180,
+	.get_pendown_state = omap3beagle_tsc2007_get_pendown_state,
+	.init_platform_hw = omap3beagle_tsc2007_init,
+};
+#endif
 
 static struct i2c_board_info __initdata beagle_i2c2_boardinfo[] = {
+#if defined(CONFIG_RTC_DRV_DS1307) || \
+        defined(CONFIG_RTC_DRV_DS1307_MODULE)
 	{
 		I2C_BOARD_INFO("ds1307", 0x68),
 	},
-};
+#elif defined(CONFIG_TOUCHSCREEN_TSC2007)
+	{
+		I2C_BOARD_INFO("tsc2007", 0x48),
+		.irq = OMAP_GPIO_IRQ(OMAP3BEAGLE_TSC2007_GPIO),
+		.platform_data = &tsc2007_info,
+	},
 #else
-static struct i2c_board_info __initdata beagle_i2c2_boardinfo[] = {};
+	{},
 #endif
+};
 
 static int __init omap3_beagle_i2c_init(void)
 {
