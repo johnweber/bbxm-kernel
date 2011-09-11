@@ -723,17 +723,18 @@ static struct i2c_board_info __initdata beagle_i2c_eeprom[] = {
        },
 };
 
-#if defined(CONFIG_RTC_DRV_DS1307) || \
-	defined(CONFIG_RTC_DRV_DS1307_MODULE)
+
 
 static struct i2c_board_info __initdata beagle_i2c2_boardinfo[] = {
 	{
+		I2C_BOARD_INFO("tlc59108", 0x40),
+	},
+#if defined(CONFIG_RTC_DRV_DS1307) || \
+	defined(CONFIG_RTC_DRV_DS1307_MODULE)
 		I2C_BOARD_INFO("ds1307", 0x68),
 	},
-};
-#else
-static struct i2c_board_info __initdata beagle_i2c2_boardinfo[] = {};
 #endif
+};
 
 static int __init omap3_beagle_i2c_init(void)
 {
