@@ -800,7 +800,6 @@ static struct i2c_board_info __initdata beagle_i2c_eeprom[] = {
        },
 };
 
-<<<<<<< HEAD
 #if defined(CONFIG_INPUT_TOUCHSCREEN) && defined(CONFIG_TOUCHSCREEN_TSC2007)
 /* Touchscreen */
 #define OMAP3BEAGLE_TSC2007_GPIO 157
