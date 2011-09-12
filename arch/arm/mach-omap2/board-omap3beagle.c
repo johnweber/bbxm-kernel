@@ -800,6 +800,7 @@ static struct i2c_board_info __initdata beagle_i2c_eeprom[] = {
        },
 };
 
+<<<<<<< HEAD
 #if defined(CONFIG_INPUT_TOUCHSCREEN) && defined(CONFIG_TOUCHSCREEN_TSC2007)
 /* Touchscreen */
 #define OMAP3BEAGLE_TSC2007_GPIO 157
@@ -836,9 +837,11 @@ static struct tsc2007_platform_data tsc2007_info = {
 #endif
 
 static struct i2c_board_info __initdata beagle_i2c2_boardinfo[] = {
-#if defined(CONFIG_RTC_DRV_DS1307) || \
-        defined(CONFIG_RTC_DRV_DS1307_MODULE)
 	{
+		I2C_BOARD_INFO("tlc59108", 0x40),
+	},
+#if defined(CONFIG_RTC_DRV_DS1307) || \
+	defined(CONFIG_RTC_DRV_DS1307_MODULE)
 		I2C_BOARD_INFO("ds1307", 0x68),
 	},
 #elif defined(CONFIG_TOUCHSCREEN_TSC2007)
@@ -847,8 +850,6 @@ static struct i2c_board_info __initdata beagle_i2c2_boardinfo[] = {
 		.irq = OMAP_GPIO_IRQ(OMAP3BEAGLE_TSC2007_GPIO),
 		.platform_data = &tsc2007_info,
 	},
-#else
-	{},
 #endif
 };
 
