@@ -841,6 +841,7 @@ static struct i2c_board_info __initdata beagle_i2c2_boardinfo[] = {
 	},
 #if defined(CONFIG_RTC_DRV_DS1307) || \
 	defined(CONFIG_RTC_DRV_DS1307_MODULE)
+	{
 		I2C_BOARD_INFO("ds1307", 0x68),
 	},
 #elif defined(CONFIG_TOUCHSCREEN_TSC2007)
